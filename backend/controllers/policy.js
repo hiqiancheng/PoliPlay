@@ -42,11 +42,12 @@ exports.analyzeDetailedPolicy = async (req, res) => {
       return res.status(400).json({ error: '提交的政策信息不完整' });
     }
     const policyId = uuidv4();
-    // 保存政策到数据库
+    // 保存政策到数据库（包含分析问题和答案）
     await policyModel.savePolicy({
       id: policyId,
       title,
       content,
+      background: analysis.questions || [], // 保存分析问题和答案作为background
       createdAt: new Date()
     });
     // 调用AI服务生成报告

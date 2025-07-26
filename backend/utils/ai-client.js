@@ -7,14 +7,21 @@ const config = require('./config');
  */
 class AIClient {
   constructor() {
-    this.apiKey = config.aiApiKey;
-    this.apiUrl = config.aiApiUrl;
-    
-    this.client = axios.create({
-      baseURL: this.apiUrl,
+    // 细化Agent客户端（一号接口）
+    this.refineClient = axios.create({
+      baseURL: config.refineAgentApiUrl,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        'Authorization': `Bearer ${config.refineAgentApiKey}`
+      }
+    });
+    
+    // 分析Agent客户端（二号接口）
+    this.analyzeClient = axios.create({
+      baseURL: config.analyzeAgentApiUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.analyzeAgentApiKey}`
       }
     });
   }
@@ -27,12 +34,12 @@ class AIClient {
    */
   async analyzePolicy(title, content) {
     try {
-      // 构建发送给Dify AI的查询内容
+      // 构建发送给细化Agent的查询内容
       const query = `#政策标题：${title}
 # 政策内容：${content}`;
 
-      // 调用Dify AI聊天消息API
-      const response = await this.client.post('/chat-messages', {
+      // 调用细化Agent的聊天消息API
+      const response = await this.refineClient.post('/chat-messages', {
         query: query,
         response_mode: 'blocking',
         user: 'policy-analyzer',
@@ -54,7 +61,7 @@ class AIClient {
           analysisResult = JSON.parse(aiAnswer);
         }
       } catch (parseError) {
-        console.warn('AI返回的内容不是有效的JSON格式，使用默认结构');
+        console.warn('细化Agent返回的内容不是有效的JSON格式，使用默认结构');
         // 如果解析失败，使用默认结构
         analysisResult = {
           summary: aiAnswer || `这是关于"${title}"的政策分析。该政策主要涉及经济发展、社会治理和环境保护等方面，旨在促进可持续发展和社会和谐。`,
@@ -120,7 +127,7 @@ class AIClient {
 
       return analysisResult;
     } catch (error) {
-      console.error('AI分析政策失败:', error);
+      console.error('细化Agent分析政策失败:', error);
       
       // 如果API调用失败，返回模拟数据作为备用
       return {
@@ -195,14 +202,14 @@ class AIClient {
    */
   async generatePolicyReport(title, content, questions) {
     try {
-      // 构建发送给Dify AI的查询内容
+      // 构建发送给分析Agent的查询内容
       const query = `# 政策标题：${title}
 # 政策内容：${content}
 # 问题回答：
 ${questions.map((q, index) => `${index + 1}. ${q.title}: ${q.answer}`).join('\n')}`;
 
-      // 调用Dify AI聊天消息API
-      const response = await this.client.post('/chat-messages', {
+      // 调用分析Agent的聊天消息API
+      const response = await this.analyzeClient.post('/chat-messages', {
         query: query,
         response_mode: 'blocking',
         user: 'policy-analyzer',
@@ -223,7 +230,7 @@ ${questions.map((q, index) => `${index + 1}. ${q.title}: ${q.answer}`).join('\n'
           reportResult = JSON.parse(aiAnswer);
         }
       } catch (parseError) {
-        console.warn('AI返回的内容不是有效的JSON格式，使用默认结构');
+        console.warn('分析Agent返回的内容不是有效的JSON格式，使用默认结构');
         // 如果解析失败，使用默认结构
         reportResult = {
           comments: [
@@ -233,24 +240,24 @@ ${questions.map((q, index) => `${index + 1}. ${q.title}: ${q.answer}`).join('\n'
             { role: '学生', comment: '希望有更多教育支持。', score: 4 }
           ],
           tags: ['政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程'],
-          report:"报告全文"
+          report: aiAnswer || "报告全文"
         };
       }
       return reportResult;
     } catch (error) {
-      console.error('AI生成政策报告失败:', error);
+      console.error('分析Agent生成政策报告失败:', error);
       
       // 如果API调用失败，返回模拟数据作为备用
-      reportResult = {
-          comments: [
-            { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
-            { role: '工人', comment: '希望政策能落实到位。', score: 3 },
-            { role: '企业家', comment: '有利于企业发展。', score: 5 },
-            { role: '学生', comment: '希望有更多教育支持。', score: 4 }
-          ],
-          tags: ['政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程'],
-          report:"报告全文"
-        };
+      return {
+        comments: [
+          { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
+          { role: '工人', comment: '希望政策能落实到位。', score: 3 },
+          { role: '企业家', comment: '有利于企业发展。', score: 5 },
+          { role: '学生', comment: '希望有更多教育支持。', score: 4 }
+        ],
+        tags: ['政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程'],
+        report: "报告全文"
+      };
     }
   }
 }

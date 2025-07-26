@@ -7,6 +7,7 @@ async function initTables() {
       id VARCHAR(64) PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       content TEXT NOT NULL,
+      background TEXT,
       createdAt DATETIME NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
@@ -33,8 +34,8 @@ async function initTables() {
 // 保存政策
 async function savePolicy(policy) {
   await db.query(
-    'INSERT INTO policy (id, title, content, createdAt) VALUES (?, ?, ?, ?)',
-    [policy.id, policy.title, policy.content, policy.createdAt]
+    'INSERT INTO policy (id, title, content, background, createdAt) VALUES (?, ?, ?, ?, ?)',
+    [policy.id, policy.title, policy.content, policy.background ? JSON.stringify(policy.background) : null, policy.createdAt]
   );
 }
 
@@ -69,7 +70,12 @@ async function getAllPolicies() {
 // 查询单个政策
 async function getPolicyById(id) {
   const [rows] = await db.query('SELECT * FROM policy WHERE id = ?', [id]);
-  return rows[0];
+  if (!rows[0]) return null;
+  const policy = rows[0];
+  return {
+    ...policy,
+    background: policy.background ? JSON.parse(policy.background) : []
+  };
 }
 
 // 查询报告

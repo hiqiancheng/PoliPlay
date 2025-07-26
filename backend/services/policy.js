@@ -35,69 +35,98 @@ exports.generatePolicyReport = async (title, content, questions) => {
     const aiTags = aiResult.tags || [];
     const reportText = aiResult.report || '';
     
-    // 统计词云（基于评论内容和报告内容）
-    const allText = [
-      ...commentsArr.map(item => item.comment),
-      reportText
-    ].join(' ');
+    // 构建用于分词的文本（包含评论内容、报告内容和政策标题内容）
+    const textSources = [
+      title || '',
+      content || '',
+      reportText || '',
+      ...commentsArr.map(item => item.comment || '')
+    ].filter(text => text.trim().length > 0);
     
-    // 定义停用词列表
-    const stopWords = new Set([
-      '的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '个', '上', '也', '很', '到', '说', '要', '去',
-      '你', '会', '着', '没有', '看', '好', '自己', '这', '那', '里', '来', '他', '时候', '过', '下', '可以', '后', '多',
-      '于', '把', '为', '但', '却', '又', '与', '及', '而', '且', '或', '所以', '因为', '如果', '虽然', '然而', '不过',
-      '对于', '关于', '根据', '按照', '通过', '由于', '这个', '那个', '这些', '那些', '进行', '实现', '提高', '加强',
-      '能够', '应该', '需要', '可能', '比较', '非常', '相当', '比如', '例如', '等等', '以及', '还有', '同时', '另外'
-    ]);
+    const allText = textSources.join(' ');
+    console.log('用于分词的文本长度:', allText.length);
+    console.log('文本预览:', allText.substring(0, 200) + '...');
     
-    // 添加政策相关的自定义词汇到jieba词典
-    const policyTerms = [
-      '政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程',
-      '公共服务', '监管体系', '法治建设', '创新驱动', '绿色发展', '数字化转型',
-      '营商环境', '产业升级', '区域协调', '城乡统筹', '精准扶贫', '乡村振兴',
-      '教育改革', '医疗卫生', '养老保险', '就业创业', '住房保障', '环境保护'
-    ];
+    // 生成词云
+    let wordCloud = [];
+    let tags = [];
     
-    // 将政策术语添加到jieba词典
-    policyTerms.forEach(term => {
-      jieba.insertWord(term);
-    });
-    
-    // 使用jieba进行专业中文分词
-    const words = jieba.cut(allText);
-   
-    // 词频统计，过滤停用词和单字
-    const freqMap = {};
-    words.forEach(word => {
-      const trimmedWord = word.trim();
-      if (trimmedWord.length >= 2 && !stopWords.has(trimmedWord) && /[\u4e00-\u9fa5]/.test(trimmedWord)) {
-        freqMap[trimmedWord] = (freqMap[trimmedWord] || 0) + 1;
+    try {
+      if (allText.trim().length > 0) {
+        // 添加政策相关的自定义词汇到jieba词典
+        const policyTerms = [
+          '政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程',
+          '公共服务', '监管体系', '法治建设', '创新驱动', '绿色发展', '数字化转型',
+          '营商环境', '产业升级', '区域协调', '城乡统筹', '精准扶贫', '乡村振兴',
+          '教育改革', '医疗卫生', '养老保险', '就业创业', '住房保障', '环境保护'
+        ];
+        
+        // 将政策术语添加到jieba词典
+        policyTerms.forEach(term => {
+          jieba.insertWord(term);
+        });
+        
+        // 使用jieba进行专业中文分词
+        const words = jieba.cut(allText);
+        console.log('分词结果数量:', words.length);
+        console.log('分词结果预览:', words.slice(0, 20));
+        
+        // 定义停用词列表（精简版，避免过度过滤）
+        const stopWords = new Set([
+          '的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '个', '上', '也', '很', '到', '说', '要', '去',
+          '你', '会', '着', '没有', '看', '好', '自己', '这', '那', '里', '来', '他', '时候', '过', '下', '可以', '后', '多',
+          '于', '把', '为', '但', '却', '又', '与', '及', '而', '且', '或', '如果', '虽然', '然而', '不过', '同时', '另外',
+          '，', '。', '、', '；', '：', '？', '！', '"', '"', "'", "'", '（', '）', '【', '】', '《', '》', ' ', '\n', '\r', '\t'
+        ]);
+        
+        // 词频统计，过滤停用词、单字和纯标点
+        const freqMap = {};
+        words.forEach(word => {
+          const trimmedWord = word.trim();
+          // 更宽松的过滤条件：长度>=2，不在停用词列表中，包含中文字符
+          if (trimmedWord.length >= 2 && 
+              !stopWords.has(trimmedWord) && 
+              /[\u4e00-\u9fa5]/.test(trimmedWord) &&
+              !/^[，。、；：？！"'（）【】《》\s]+$/.test(trimmedWord)) {
+            freqMap[trimmedWord] = (freqMap[trimmedWord] || 0) + 1;
+          }
+        });
+        
+        console.log('词频统计结果:', Object.keys(freqMap).length, '个词汇');
+        console.log('词频Top10:', Object.entries(freqMap)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 10)
+        );
+        
+        // 生成词云数组
+        wordCloud = Object.entries(freqMap)
+          .map(([text, weight]) => ({ text, weight }))
+          .sort((a, b) => b.weight - a.weight)
+          .slice(0, 30); // 取前30高频词
+        
+        console.log('初始词云数量:', wordCloud.length);
       }
-    });
-    
-    // 生成词云数组
-    let wordCloud = Object.entries(freqMap)
-      .map(([text, weight]) => ({ text, weight }))
-      .sort((a, b) => b.weight - a.weight)
-      .slice(0, 30); // 取前30高频词
-    
-    // 如果词云数据不足，使用AI提供的tags作为补充
-    if (wordCloud.length < 10) {
-      const supplementWords = aiTags.map((tag, index) => ({
-        text: tag,
-        weight: Math.max(15 - index * 2, 1) // 递减权重
-      }));
       
-      // 合并并去重
-      const existingTexts = new Set(wordCloud.map(item => item.text));
-      supplementWords.forEach(item => {
-        if (!existingTexts.has(item.text)) {
-          wordCloud.push(item);
-        }
-      });
+      // 如果词云数据不足，使用AI提供的tags作为补充
+      if (wordCloud.length < 10 && aiTags.length > 0) {
+        console.log('词云数据不足，使用AI提供的tags补充');
+        const supplementWords = aiTags.map((tag, index) => ({
+          text: tag,
+          weight: Math.max(15 - index * 2, 1) // 递减权重
+        }));
+        
+        // 合并并去重
+        const existingTexts = new Set(wordCloud.map(item => item.text));
+        supplementWords.forEach(item => {
+          if (!existingTexts.has(item.text)) {
+            wordCloud.push(item);
+          }
+        });
+      }
       
       // 如果还是不够，添加默认词汇
       if (wordCloud.length < 10) {
+        console.log('仍然数据不足，添加默认词汇');
         const defaultWords = [
           { text: '政策实施', weight: 15 },
           { text: '社会效应', weight: 12 },
@@ -111,16 +140,49 @@ exports.generatePolicyReport = async (title, content, questions) => {
           { text: '协调发展', weight: 4 }
         ];
         
+        const existingTexts = new Set(wordCloud.map(item => item.text));
         defaultWords.forEach(item => {
           if (!existingTexts.has(item.text)) {
             wordCloud.push(item);
           }
         });
       }
+      
+      // 优先使用AI返回的tags，如果没有则使用词频统计的结果
+      if (aiTags.length > 0) {
+        tags = aiTags.slice(0, 6);
+        console.log('使用AI提供的tags:', tags);
+      } else if (wordCloud.length > 0) {
+        tags = wordCloud.slice(0, 5).map(item => item.text);
+        console.log('使用词频统计的tags:', tags);
+      } else {
+        tags = ['政策分析', '制度建设', '经济发展', '社会保障', '民生工程'];
+        console.log('使用默认tags:', tags);
+      }
+      
+    } catch (segmentError) {
+      console.error('分词处理失败:', segmentError);
+      // 如果分词失败，使用AI提供的tags或默认数据
+      if (aiTags.length > 0) {
+        tags = aiTags.slice(0, 6);
+        wordCloud = aiTags.map((tag, index) => ({
+          text: tag,
+          weight: Math.max(15 - index * 2, 1)
+        }));
+      } else {
+        tags = ['政策分析', '制度建设', '经济发展', '社会保障', '民生工程'];
+        wordCloud = [
+          { text: '政策实施', weight: 15 },
+          { text: '社会效应', weight: 12 },
+          { text: '经济影响', weight: 11 },
+          { text: '民生改善', weight: 10 },
+          { text: '制度创新', weight: 9 }
+        ];
+      }
     }
 
-    // 优先使用AI返回的tags，如果没有则使用词频统计的结果
-    const tags = aiTags.length > 0 ? aiTags.slice(0, 6) : wordCloud.slice(0, 5).map(item => item.text);
+    console.log('最终词云数量:', wordCloud.length);
+    console.log('最终tags:', tags);
 
     // 统计支持率/反对率（4分及以上为支持，2分及以下为反对）
     const total = commentsArr.length;

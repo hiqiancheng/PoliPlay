@@ -23,9 +23,9 @@
 
             <div class="policy-background">
                 <h3>政策详情</h3>
-                <div class="background-items">
+                <div class="background-items" v-if="policy.background && policy.background.length > 0">
                     <div v-for="item in policy.background" :key="item.id" class="background-item">
-                        <div class="question">{{ item.id }}. {{ item.question }}</div>
+                        <div class="question">{{ item.id }}. {{ item.title }}</div>
 
                         <!-- 文本类型答案 -->
                         <div v-if="item.type === 'text'" class="answer">{{ item.answer }}</div>
@@ -50,6 +50,9 @@
                             </el-tag>
                         </div>
                     </div>
+                </div>
+                <div v-else class="no-background">
+                    <p>暂无详细政策信息。这可能是通过旧版本系统创建的政策。</p>
                 </div>
             </div>
 
@@ -95,6 +98,8 @@ onMounted(async () => {
     try {
         const response = await axios.get(`/api/policy/${props.policyId}`);
         policy.value = response.data;
+        console.log('加载的政策数据:', policy.value);
+        console.log('政策背景数据:', policy.value.background);
     } catch (error) {
         ElMessage.error('加载政策详情失败');
         console.error('加载政策详情失败:', error);
@@ -198,6 +203,21 @@ const viewReport = () => {
 .answer {
     color: #ffffff;
     line-height: 1.6;
+}
+
+.no-background {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.no-background p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    margin: 0;
+    line-height: 1.5;
 }
 
 :deep(.el-descriptions) {

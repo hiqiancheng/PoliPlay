@@ -41,13 +41,13 @@
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
   background: rgba(149, 64, 107, 0.5);
   border-radius: 8px;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(149, 64, 107, 0.15);
   transition: background 0.3s;
 }
@@ -57,13 +57,13 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
 }
 
 /* 火狐浏览器 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(149, 64, 107, 0.7) rgba(255,255,255,0.08);
+  scrollbar-color: rgba(149, 64, 107, 0.7) rgba(255, 255, 255, 0.08);
 }
 </style>

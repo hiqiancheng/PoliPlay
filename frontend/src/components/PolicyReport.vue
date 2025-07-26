@@ -175,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineProps, defineEmits, watch } from 'vue';
+import { ref, onMounted, defineProps, defineEmits, watch, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Loading, ArrowRight, Close, ChatLineRound } from '@element-plus/icons-vue';
 import axios from 'axios';
@@ -222,9 +222,11 @@ watch(() => report.value, (newVal) => {
 }, { deep: true });
 
 // 渲染词云
-const renderWordCloud = () => {
+const renderWordCloud = async () => {
+    await nextTick();
     if (!wordCloudContainer.value) return;
 
+    console.log('词云数据:', report.value.wordCloud);
     // 清空容器
     d3.select(wordCloudContainer.value).selectAll("*").remove();
 
@@ -251,8 +253,9 @@ const renderWordCloud = () => {
     const colorScale = d3.scaleOrdinal()
         .domain([0, report.value.wordCloud.length])
         .range([
-            "#d896c4", "#b5689d", "#95406b", "#7d3359",
-            "#c285b5", "#aa6d9c", "#9c5c8e", "#8e4a7f"
+            "#f8f4f8", "#f0e6f0", "#e8d5e8", "#e0c4e0",
+            "#d8b3d8", "#d0a2d0", "#c891c8", "#c080c0",
+            "#b870b8", "#b060b0", "#a850a8", "#a040a0"
         ]);
 
     // 计算字体大小范围
