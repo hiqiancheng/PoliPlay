@@ -196,9 +196,9 @@ class AIClient {
   async generatePolicyReport(title, content, questions) {
     try {
       // 构建发送给Dify AI的查询内容
-      const query = `政策标题：${title}
-政策内容：${content}
-问题回答：
+      const query = `# 政策标题：${title}
+# 政策内容：${content}
+# 问题回答：
 ${questions.map((q, index) => `${index + 1}. ${q.title}: ${q.answer}`).join('\n')}`;
 
       // 调用Dify AI聊天消息API
@@ -225,24 +225,32 @@ ${questions.map((q, index) => `${index + 1}. ${q.title}: ${q.answer}`).join('\n'
       } catch (parseError) {
         console.warn('AI返回的内容不是有效的JSON格式，使用默认结构');
         // 如果解析失败，使用默认结构
-        reportResult = [
-          { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
-          { role: '工人', comment: '希望政策能落实到位。', score: 3 },
-          { role: '企业家', comment: '有利于企业发展。', score: 5 },
-          { role: '学生', comment: '希望有更多教育支持。', score: 4 }
-        ];
+        reportResult = {
+          comments: [
+            { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
+            { role: '工人', comment: '希望政策能落实到位。', score: 3 },
+            { role: '企业家', comment: '有利于企业发展。', score: 5 },
+            { role: '学生', comment: '希望有更多教育支持。', score: 4 }
+          ],
+          tags: ['政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程'],
+          report:"报告全文"
+        };
       }
       return reportResult;
     } catch (error) {
       console.error('AI生成政策报告失败:', error);
       
       // 如果API调用失败，返回模拟数据作为备用
-      return [
-        { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
-        { role: '工人', comment: '希望政策能落实到位。', score: 3 },
-        { role: '企业家', comment: '有利于企业发展。', score: 5 },
-        { role: '学生', comment: '希望有更多教育支持。', score: 4 }
-      ];
+      reportResult = {
+          comments: [
+            { role: '农民', comment: '这个政策对我们农村有帮助。', score: 4 },
+            { role: '工人', comment: '希望政策能落实到位。', score: 3 },
+            { role: '企业家', comment: '有利于企业发展。', score: 5 },
+            { role: '学生', comment: '希望有更多教育支持。', score: 4 }
+          ],
+          tags: ['政策实施', '制度建设', '改革开放', '经济发展', '社会保障', '民生工程'],
+          report:"报告全文"
+        };
     }
   }
 }

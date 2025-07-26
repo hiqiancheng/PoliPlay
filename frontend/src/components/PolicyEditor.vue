@@ -3,22 +3,27 @@
         <header class="editor-header">
             <h2>政策编辑</h2>
             <div class="header-actions">
-                <el-button @click="goBack">返回</el-button>
-                <el-button type="primary" @click="submitPolicy">提交政策</el-button>
+                <el-button @click="goBack" :disabled="isSubmitting || isGeneratingReport">返回</el-button>
+                <el-button type="primary" @click="submitPolicy" :loading="isSubmitting"
+                    :disabled="isSubmitting || isGeneratingReport">
+                    {{ isSubmitting ? '正在分析...' : '提交政策' }}
+                </el-button>
             </div>
         </header>
 
         <main class="editor-main">
             <div class="editor-wrapper">
                 <div class="editor-title">
-                    <el-input v-model="policyTitle" placeholder="政策名称" maxlength="100" />
+                    <el-input v-model="policyTitle" placeholder="政策名称" maxlength="100"
+                        :disabled="isSubmitting || isGeneratingReport" />
                 </div>
 
                 <div class="editor-content">
                     <div style="background-color: white;">
                         <Toolbar :editor="editorRef" :defaultConfig="toolbarConfig" mode="default" />
                         <Editor style="height:45vh; overflow-y: hidden;" v-model="editorContent"
-                            :defaultConfig="editorConfig" mode="default" @onCreated="handleCreated" />
+                            :defaultConfig="editorConfig" mode="default" @onCreated="handleCreated"
+                            :disabled="isSubmitting || isGeneratingReport" />
                     </div>
                 </div>
             </div>
@@ -26,7 +31,7 @@
 
         <!-- 政策细化对话框 -->
         <el-dialog v-model="dialogVisible" title="政策细化" width="60%" :before-close="handleClose" class="policy-dialog"
-            center>
+            center :close-on-click-modal="false" :close-on-press-escape="false">
             <div v-if="policyAnalysis">
                 <div class="policy-summary">
                     <p>{{ policyAnalysis.summary }}</p>
@@ -39,24 +44,27 @@
 
                         <!-- 文本输入题 -->
                         <el-input v-if="question.type === 'text'" v-model="question.answer" type="textarea" :rows="3"
-                            :placeholder="question.placeholder" />
+                            :placeholder="question.placeholder" :disabled="isGeneratingReport" />
 
                         <!-- 单选题 -->
-                        <el-radio-group v-else-if="question.type === 'choice'" v-model="question.answer">
+                        <el-radio-group v-else-if="question.type === 'choice'" v-model="question.answer"
+                            :disabled="isGeneratingReport">
                             <el-radio v-for="(option, index) in question.options" :key="index" :label="option">
                                 {{ option }}
                             </el-radio>
                         </el-radio-group>
 
                         <!-- 多选题 -->
-                        <el-checkbox-group v-else-if="question.type === 'multiple'" v-model="question.answer">
+                        <el-checkbox-group v-else-if="question.type === 'multiple'" v-model="question.answer"
+                            :disabled="isGeneratingReport">
                             <el-checkbox v-for="(option, index) in question.options" :key="index" :label="option">
                                 {{ option }}
                             </el-checkbox>
                         </el-checkbox-group>
 
                         <!-- 判断题 -->
-                        <el-radio-group v-else-if="question.type === 'boolean'" v-model="question.answer">
+                        <el-radio-group v-else-if="question.type === 'boolean'" v-model="question.answer"
+                            :disabled="isGeneratingReport">
                             <el-radio :label="true">是</el-radio>
                             <el-radio :label="false">否</el-radio>
                         </el-radio-group>
@@ -72,9 +80,10 @@
 
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button v-if="policyAnalysis" type="primary" @click="submitDetailedPolicy">
-                        提交
+                    <el-button @click="dialogVisible = false" :disabled="isGeneratingReport">取消</el-button>
+                    <el-button v-if="policyAnalysis" type="primary" @click="submitDetailedPolicy"
+                        :loading="isGeneratingReport" :disabled="isGeneratingReport">
+                        {{ isGeneratingReport ? '正在生成报告...' : '提交' }}
                     </el-button>
                 </span>
             </template>
@@ -99,6 +108,8 @@ const editorContent = ref('');
 const policyTitle = ref('');
 const dialogVisible = ref(false);
 const policyAnalysis = ref(null);
+const isSubmitting = ref(false);
+const isGeneratingReport = ref(false);
 
 // 工具栏配置
 const toolbarConfig = {
@@ -140,6 +151,7 @@ const submitPolicy = async () => {
         return;
     }
 
+    isSubmitting.value = true;
     dialogVisible.value = true;
 
     try {
@@ -154,6 +166,8 @@ const submitPolicy = async () => {
         ElMessage.error('政策分析失败，请重试');
         console.error('政策分析失败:', error);
         dialogVisible.value = false;
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
@@ -177,6 +191,8 @@ const submitDetailedPolicy = async () => {
             return;
         }
 
+        isGeneratingReport.value = true;
+
         // 调用二号接口，获取政策分析报告
         const response = await axios.post('/api/policy/analyze-detailed', {
             title: policyTitle.value,
@@ -191,6 +207,8 @@ const submitDetailedPolicy = async () => {
     } catch (error) {
         ElMessage.error('提交失败，请重试');
         console.error('提交详细政策失败:', error);
+    } finally {
+        isGeneratingReport.value = false;
     }
 };
 

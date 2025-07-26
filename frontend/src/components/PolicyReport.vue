@@ -3,8 +3,10 @@
         <header class="report-header">
             <h2>政策分析报告</h2>
             <div class="header-actions">
-                <el-button @click="goBack">返回</el-button>
-                <el-button type="primary" @click="exportToFeishu">导出到飞书</el-button>
+                <el-button @click="goBack" :disabled="isExporting">返回</el-button>
+                <el-button type="primary" @click="exportToFeishu" :loading="isExporting" :disabled="isExporting">
+                    {{ isExporting ? '正在导出...' : '导出到飞书' }}
+                </el-button>
             </div>
         </header>
 
@@ -124,7 +126,9 @@
 
             <div class="report-analysis">
                 <h3>详细分析报告见飞书文档</h3>
-                <el-button type="primary" @click="exportToFeishu">在飞书打开</el-button>
+                <el-button type="primary" @click="exportToFeishu" :loading="isExporting" :disabled="isExporting">
+                    {{ isExporting ? '正在导出...' : '在飞书打开' }}
+                </el-button>
             </div>
         </main>
 
@@ -191,6 +195,7 @@ const report = ref(null);
 const wordCloudContainer = ref(null);
 const dialogVisible = ref(false);
 const selectedOpinion = ref(null);
+const isExporting = ref(false);
 
 // 加载报告数据
 onMounted(() => {
@@ -218,10 +223,26 @@ watch(() => report.value, (newVal) => {
 
 // 渲染词云
 const renderWordCloud = () => {
-    if (!report.value || !report.value.wordCloud || !wordCloudContainer.value) return;
+    if (!wordCloudContainer.value) return;
 
     // 清空容器
     d3.select(wordCloudContainer.value).selectAll("*").remove();
+
+    if (!report.value || !report.value.wordCloud || report.value.wordCloud.length === 0) {
+        // 显示空状态
+        d3.select(wordCloudContainer.value)
+            .append("div")
+            .style("display", "flex")
+            .style("justify-content", "center")
+            .style("align-items", "center")
+            .style("height", "400px")
+            .style("color", "rgba(255, 255, 255, 0.6)")
+            .style("font-size", "16px")
+            .text("暂无词云数据");
+        return;
+    }
+
+    console.log('词云数据:', report.value.wordCloud);
 
     const width = wordCloudContainer.value.clientWidth;
     const height = 400;
@@ -234,15 +255,20 @@ const renderWordCloud = () => {
             "#c285b5", "#aa6d9c", "#9c5c8e", "#8e4a7f"
         ]);
 
+    // 计算字体大小范围
+    const maxWeight = Math.max(...report.value.wordCloud.map(d => d.weight));
+    const minWeight = Math.min(...report.value.wordCloud.map(d => d.weight));
+    const weightRange = maxWeight - minWeight || 1;
+
     // 创建词云布局
     const layout = cloud()
         .size([width, height])
         .words(report.value.wordCloud.map(d => ({
             text: d.text,
-            size: 10 + (d.weight / 10), // 根据权重调整字体大小
+            size: Math.max(12, 12 + ((d.weight - minWeight) / weightRange) * 28), // 字体大小12-40px
             weight: d.weight
         })))
-        .padding(5)
+        .padding(8)
         .rotate(() => 0) // 不旋转文字
         .font("微软雅黑")
         .fontSize(d => d.size)
@@ -366,7 +392,7 @@ const exportToFeishu = async () => {
             return;
         }
 
-        ElMessage.info('正在导出到飞书文档，请稍候...');
+        isExporting.value = true;
 
         const response = await axios.post('/api/policy/export-feishu', {
             reportId: report.value.id
@@ -390,6 +416,8 @@ const exportToFeishu = async () => {
         } else {
             ElMessage.error('导出失败，请检查网络连接或稍后重试');
         }
+    } finally {
+        isExporting.value = false;
     }
 };
 </script>

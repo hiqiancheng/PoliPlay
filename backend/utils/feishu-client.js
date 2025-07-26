@@ -187,17 +187,6 @@ class FeishuClient {
       ]
     });
     
-    // 分隔线
-    blocks.push({
-      elements: [
-        {
-          text_run: {
-            content: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          }
-        }
-      ]
-    });
-    
     // 空行
     blocks.push({
       elements: [
@@ -214,10 +203,9 @@ class FeishuClient {
       elements: [
         {
           text_run: {
-            content: "📋 执行摘要",
+            content: "一、执行摘要",
             text_element_style: {
-              bold: true,
-              text_color: 3 // 绿色
+              bold: true
             }
           }
         }
@@ -251,10 +239,9 @@ class FeishuClient {
       elements: [
         {
           text_run: {
-            content: "📊 民意分析",
+            content: "二、民意分析",
             text_element_style: {
-              bold: true,
-              text_color: 5 // 橙色
+              bold: true
             }
           }
         }
@@ -280,9 +267,7 @@ class FeishuClient {
           text_run: {
             content: `${supportRate}%`,
             text_element_style: {
-              bold: true,
-              text_color: 3, // 绿色
-              background_color: 14 // 浅绿背景
+              bold: true
             }
           }
         }
@@ -303,9 +288,7 @@ class FeishuClient {
           text_run: {
             content: `${opposeRate}%`,
             text_element_style: {
-              bold: true,
-              text_color: 6, // 红色
-              background_color: 15 // 浅红背景
+              bold: true
             }
           }
         }
@@ -327,9 +310,7 @@ class FeishuClient {
             text_run: {
               content: `${neutralRate}%`,
               text_element_style: {
-                bold: true,
-                text_color: 7, // 灰色
-                background_color: 15 // 浅灰背景
+                bold: true
               }
             }
           }
@@ -353,10 +334,9 @@ class FeishuClient {
         elements: [
           {
             text_run: {
-              content: "🏷️ 政策标签",
+              content: "三、政策标签",
               text_element_style: {
-                bold: true,
-                text_color: 4 // 紫色
+                bold: true
               }
             }
           }
@@ -364,15 +344,13 @@ class FeishuClient {
       });
       
       blocks.push({
-        elements: report.tags.map(tag => ({
-          text_run: {
-            content: `#${tag} `,
-            text_element_style: {
-              background_color: 14, // 蓝色背景
-              text_color: 1
+        elements: [
+          {
+            text_run: {
+              content: report.tags.join('、')
             }
           }
-        }))
+        ]
       });
     }
     
@@ -391,10 +369,9 @@ class FeishuClient {
       elements: [
         {
           text_run: {
-            content: "📈 详细分析",
+            content: "四、详细分析",
             text_element_style: {
-              bold: true,
-              text_color: 2 // 深蓝色
+              bold: true
             }
           }
         }
@@ -446,10 +423,9 @@ class FeishuClient {
         elements: [
           {
             text_run: {
-              content: "💬 各方角色意见",
+              content: "五、各方角色意见",
               text_element_style: {
-                bold: true,
-                text_color: 7 // 深绿色
+                bold: true
               }
             }
           }
@@ -472,30 +448,13 @@ class FeishuClient {
               text_run: {
                 content: comment.role,
                 text_element_style: {
-                  bold: true,
-                  text_color: 1
+                  bold: true
                 }
               }
             },
             {
               text_run: {
-                content: ` (评分: ${comment.score}/5`,
-                text_element_style: {
-                  italic: true
-                }
-              }
-            },
-            {
-              text_run: {
-                content: "★".repeat(comment.score) + "☆".repeat(5 - comment.score),
-                text_element_style: {
-                  text_color: comment.score >= 4 ? 3 : comment.score >= 3 ? 5 : 6
-                }
-              }
-            },
-            {
-              text_run: {
-                content: ")",
+                content: ` (评分: ${comment.score}/5.0)`,
                 text_element_style: {
                   italic: true
                 }
@@ -548,10 +507,9 @@ class FeishuClient {
       elements: [
         {
           text_run: {
-            content: "🎯 结论与建议",
+            content: "六、结论与建议",
             text_element_style: {
-              bold: true,
-              text_color: 6 // 红色
+              bold: true
             }
           }
         }
@@ -576,7 +534,6 @@ class FeishuClient {
           text_run: {
             content: recommendation,
             text_element_style: {
-              background_color: 13, // 黄色背景
               bold: true
             }
           }
@@ -599,20 +556,9 @@ class FeishuClient {
       elements: [
         {
           text_run: {
-            content: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          }
-        }
-      ]
-    });
-    
-    blocks.push({
-      elements: [
-        {
-          text_run: {
-            content: "本报告由 PoliPlay 政策分析系统自动生成",
+            content: "本报告由 策奕台PoliPlay 政策分析系统自动生成",
             text_element_style: {
-              italic: true,
-              text_color: 7
+              italic: true
             }
           }
         }
