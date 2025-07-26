@@ -1,10 +1,19 @@
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const policyService = require('../services/policy');
+const policyModel = require('../models/policy');
 
-// 内存中存储政策数据（实际应用中应使用数据库）
-const policies = {};
-const reports = {};
+/**
+ * 获取现有政策列表
+ */
+exports.getPolicyList = async (req, res) => {
+  try {
+    const list = await policyModel.getAllPolicies();
+    res.status(200).json(list);
+  } catch (error) {
+    res.status(500).json({ error: '获取政策列表失败' });
+  }
+};
 
 /**
  * 分析政策内容，获取主题总结和细化问题
@@ -12,14 +21,10 @@ const reports = {};
 exports.analyzePolicy = async (req, res) => {
   try {
     const { title, content } = req.body;
-    
     if (!title || !content) {
       return res.status(400).json({ error: '标题和内容不能为空' });
     }
-    
-    // 调用一号接口（这里模拟，实际应调用AI服务）
     const analysisResult = await policyService.analyzePolicy(title, content);
-    
     res.status(200).json(analysisResult);
   } catch (error) {
     console.error('政策分析失败:', error);
@@ -33,54 +38,35 @@ exports.analyzePolicy = async (req, res) => {
 exports.analyzeDetailedPolicy = async (req, res) => {
   try {
     const { title, content, analysis } = req.body;
-    
     if (!title || !content || !analysis) {
       return res.status(400).json({ error: '提交的政策信息不完整' });
     }
-    
-    // 生成政策ID
     const policyId = uuidv4();
-    
-    // 保存政策信息
-    policies[policyId] = {
+    // 保存政策到数据库
+    await policyModel.savePolicy({
       id: policyId,
       title,
       content,
-      background: analysis.questions.map(q => ({
-        question: q.title,
-        answer: q.answer
-      })),
-      createdAt: new Date().toISOString()
-    };
-    
-    // 调用二号接口（这里模拟，实际应调用AI服务）
+      createdAt: new Date()
+    });
+    // 调用AI服务生成报告
     const reportResult = await policyService.generatePolicyReport(
-      title, 
-      content, 
+      title,
+      content,
       analysis.questions
     );
-    
-    // 生成报告ID
     const reportId = uuidv4();
-    
-    // 保存报告信息
-    reports[reportId] = {
+    // 保存报告到数据库
+    await policyModel.saveReport({
       id: reportId,
       policyId,
       title: `《${title}》分析报告`,
-      summary: reportResult.summary,
-      supportRate: reportResult.supportRate,
-      opposeRate: reportResult.opposeRate,
-      tags: reportResult.tags,
-      wordCloud: reportResult.wordCloud,
-      analysisHtml: reportResult.analysisHtml,
-      generatedAt: new Date().toISOString()
-    };
-    
-    // 将报告ID关联到政策
-    policies[policyId].reportId = reportId;
-    
-    res.status(200).json(reports[reportId]);
+      ...reportResult,
+      generatedAt: new Date()
+    });
+    // 返回报告
+    const report = await policyModel.getReportById(reportId);
+    res.status(200).json(report);
   } catch (error) {
     console.error('政策分析报告生成失败:', error);
     res.status(500).json({ error: '政策分析报告生成失败，请重试' });
@@ -90,15 +76,14 @@ exports.analyzeDetailedPolicy = async (req, res) => {
 /**
  * 获取政策详情
  */
-exports.getPolicyDetail = (req, res) => {
+exports.getPolicyDetail = async (req, res) => {
   try {
     const policyId = req.params.id;
-    
-    if (!policies[policyId]) {
+    const policy = await policyModel.getPolicyById(policyId);
+    if (!policy) {
       return res.status(404).json({ error: '未找到该政策' });
     }
-    
-    res.status(200).json(policies[policyId]);
+    res.status(200).json(policy);
   } catch (error) {
     console.error('获取政策详情失败:', error);
     res.status(500).json({ error: '获取政策详情失败，请重试' });
@@ -108,15 +93,14 @@ exports.getPolicyDetail = (req, res) => {
 /**
  * 获取政策报告
  */
-exports.getPolicyReport = (req, res) => {
+exports.getPolicyReport = async (req, res) => {
   try {
     const reportId = req.params.id;
-    
-    if (!reports[reportId]) {
+    const report = await policyModel.getReportById(reportId);
+    if (!report) {
       return res.status(404).json({ error: '未找到该报告' });
     }
-    
-    res.status(200).json(reports[reportId]);
+    res.status(200).json(report);
   } catch (error) {
     console.error('获取政策报告失败:', error);
     res.status(500).json({ error: '获取政策报告失败，请重试' });
@@ -130,20 +114,23 @@ exports.exportToFeishu = async (req, res) => {
   try {
     const { reportId } = req.body;
     
-    if (!reportId || !reports[reportId]) {
-      return res.status(404).json({ error: '未找到该报告' });
+    if (!reportId) {
+      return res.status(400).json({ error: '报告ID不能为空' });
     }
     
-    // 调用飞书API导出文档（这里模拟，实际应调用飞书API）
-    const feishuResult = await policyService.exportToFeishu(reports[reportId]);
+    console.log('开始导出报告到飞书，报告ID:', reportId);
+    
+    const feishuResult = await policyService.exportToFeishu(reportId);
     
     res.status(200).json({
       success: true,
-      message: '成功导出到飞书文档',
+      message: feishuResult.message || '成功导出到飞书文档',
       feishuUrl: feishuResult.url
     });
   } catch (error) {
     console.error('导出到飞书失败:', error);
-    res.status(500).json({ error: '导出到飞书失败，请重试' });
+    res.status(500).json({ 
+      error: error.message || '导出到飞书失败，请重试' 
+    });
   }
 }; 

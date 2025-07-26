@@ -3,7 +3,7 @@
         <header class="detail-header">
             <h2>政策详情</h2>
             <div class="header-actions">
-                <el-button type="primary" plain @click="goBack">返回</el-button>
+                <el-button @click="goBack">返回</el-button>
             </div>
         </header>
 
@@ -15,7 +15,6 @@
                 </div>
             </div>
 
-            <el-divider />
 
             <div class="policy-content">
                 <h3>政策内容</h3>
@@ -23,13 +22,35 @@
             </div>
 
             <div class="policy-background">
-                <h3>政策背景</h3>
-                <el-descriptions :column="1" border>
-                    <el-descriptions-item v-for="(item, index) in policy.background" :key="index"
-                        :label="item.question">
-                        {{ item.answer }}
-                    </el-descriptions-item>
-                </el-descriptions>
+                <h3>政策详情</h3>
+                <div class="background-items">
+                    <div v-for="item in policy.background" :key="item.id" class="background-item">
+                        <div class="question">{{ item.id }}. {{ item.question }}</div>
+
+                        <!-- 文本类型答案 -->
+                        <div v-if="item.type === 'text'" class="answer">{{ item.answer }}</div>
+
+                        <!-- 单选题类型答案 -->
+                        <div v-else-if="item.type === 'choice'" class="answer">
+                            <el-tag size="small" class="purple-tag">{{ item.answer }}</el-tag>
+                        </div>
+
+                        <!-- 多选题类型答案 -->
+                        <div v-else-if="item.type === 'multiple'" class="answer">
+                            <el-tag v-for="(option, index) in item.answer" :key="index" size="small" class="purple-tag"
+                                style="margin-right: 5px; margin-bottom: 5px;">
+                                {{ option }}
+                            </el-tag>
+                        </div>
+
+                        <!-- 判断题类型答案 -->
+                        <div v-else-if="item.type === 'boolean'" class="answer">
+                            <el-tag size="small" :class="item.answer ? 'purple-tag' : 'purple-tag-negative'">
+                                {{ item.answer ? '是' : '否' }}
+                            </el-tag>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="policy-actions">
@@ -109,9 +130,10 @@ const viewReport = () => {
     max-width: 1000px;
     margin: 0 auto;
     height: 100%;
+    box-sizing: border-box;
     overflow-y: auto;
-    background-color: #fff;
-    color: #333;
+    background-color: transparent;
+    color: #fff;
 }
 
 .detail-header {
@@ -120,7 +142,6 @@ const viewReport = () => {
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #ebeef5;
 }
 
 .policy-title {
@@ -130,11 +151,11 @@ const viewReport = () => {
 
 .policy-title h1 {
     margin-bottom: 10px;
-    color: #303133;
+    color: #ffffff;
 }
 
 .policy-meta {
-    color: #909399;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 14px;
 }
 
@@ -143,8 +164,8 @@ const viewReport = () => {
 }
 
 .content-display {
-    background-color: #f5f7fa;
-    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     padding: 20px;
     line-height: 1.8;
 }
@@ -153,12 +174,38 @@ const viewReport = () => {
     margin-bottom: 30px;
 }
 
+.background-items {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.background-item {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.background-item:last-child {
+    border-bottom: none;
+}
+
+.question {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.answer {
+    color: #ffffff;
+    line-height: 1.6;
+}
+
 :deep(.el-descriptions) {
-    --el-descriptions-item-bordered-label-background: #f5f7fa;
-    --el-descriptions-item-label-text-color: #606266;
-    --el-descriptions-item-bordered-content-background: #ffffff;
-    --el-descriptions-item-text-color: #303133;
-    --el-border-color: #dcdfe6;
+    --el-descriptions-item-bordered-label-background: rgba(255, 255, 255, 0.1);
+    --el-descriptions-item-label-text-color: rgba(255, 255, 255, 0.9);
+    --el-descriptions-item-bordered-content-background: rgba(255, 255, 255, 0.05);
+    --el-descriptions-item-text-color: rgba(255, 255, 255, 0.8);
+    --el-border-color: rgba(255, 255, 255, 0.2);
 }
 
 .policy-actions {
@@ -178,10 +225,74 @@ const viewReport = () => {
 .loading-container .el-icon {
     font-size: 40px;
     margin-bottom: 20px;
-    color: #409EFF;
+    color: #ffffff;
 }
 
 :deep(.el-divider) {
-    background-color: #dcdfe6;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.purple-tag {
+    background-color: rgba(149, 64, 107, 0.2) !important;
+    border-color: rgba(149, 64, 107, 0.4) !important;
+    color: #d896c4 !important;
+}
+
+.purple-tag-negative {
+    background-color: rgba(149, 64, 107, 0.1) !important;
+    border-color: rgba(149, 64, 107, 0.3) !important;
+    color: #d896c4 !important;
+}
+
+:deep(.el-button) {
+    background: rgba(149, 64, 107, 0.8);
+    border: none;
+    box-shadow: 0 0 10px 0 rgba(126, 50, 88, 0.8);
+    color: #ffffff;
+    font-size: 16px;
+    padding: 21px 25px !important;
+    position: relative;
+}
+
+:deep(.el-button span) {
+    font-family: serif;
+    font-weight: bold;
+    font-size: 17px !important;
+    letter-spacing: 2px;
+}
+
+:deep(.el-button:hover) {
+    background: rgba(149, 64, 107, 0.4);
+    transform: scale(1.05);
+}
+
+.header-actions :deep(.el-button) {
+    padding: 8px 16px;
+}
+
+.header-actions :deep(.el-button span) {
+    font-size: 16px;
+}
+
+.policy-actions :deep(.el-button) {
+    padding: 12px 30px;
+}
+
+:deep(.el-input) {
+    --el-input-bg-color: rgba(255, 255, 255, 0.1);
+    --el-input-border-color: rgba(255, 255, 255, 0.2);
+    --el-input-text-color: #ffffff;
+    --el-input-placeholder-color: rgba(255, 255, 255, 0.6);
+    --el-input-focus-border-color: #d896c4;
+    --el-input-hover-border-color: rgba(216, 150, 196, 0.8);
+}
+
+:deep(.el-textarea) {
+    --el-input-bg-color: rgba(255, 255, 255, 0.1);
+    --el-input-border-color: rgba(255, 255, 255, 0.2);
+    --el-input-text-color: #ffffff;
+    --el-input-placeholder-color: rgba(255, 255, 255, 0.6);
+    --el-input-focus-border-color: #d896c4;
+    --el-input-hover-border-color: rgba(216, 150, 196, 0.8);
 }
 </style>

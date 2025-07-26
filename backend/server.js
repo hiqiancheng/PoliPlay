@@ -6,6 +6,7 @@ const path = require('path');
 
 // 导入路由
 const policyRoutes = require('./routes/policy');
+const policyModel = require('./models/policy');
 
 // 创建Express应用
 const app = express();
@@ -41,4 +42,8 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`策弈台API服务已启动，监听端口: ${PORT}`);
-}); 
+});
+
+policyModel.initTables().then(() => {
+  console.log('数据库表已初始化');
+}).catch(console.error); 

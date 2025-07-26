@@ -8,7 +8,7 @@ const defaultConfig = {
   port: 5000,
   nodeEnv: 'development',
   aiApiKey: 'your_ai_api_key_here',
-  aiApiUrl: 'https://api.example.com/ai',
+  aiApiUrl: 'https://api.dify.ai/v1',
   feishuAppId: 'your_feishu_app_id_here',
   feishuAppSecret: 'your_feishu_app_secret_here',
   feishuApiUrl: 'https://open.feishu.cn/open-apis'

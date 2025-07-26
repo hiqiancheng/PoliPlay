@@ -24,7 +24,16 @@
                 <!-- 政策报告组件 -->
                 <PolicyReport v-if="currentComponent === 'report'" :reportData="reportData"
                     @back="switchComponent('home')" />
+
+                <!-- 政策列表组件 -->
+                <PolicyList v-if="currentComponent === 'list'" :policyList="policyList" @back="switchComponent('home')"
+                    @viewDetail="viewDetail" />
             </div>
+        </div>
+        <div class="copyright-bar">
+            © 2025 千诚 & Marco 版权所有<br>
+            Driven by Zeabur, Dify, Kimi, 飞书<br>
+            #AdventureX-2025 Hangzhou China
         </div>
     </div>
 </template>
@@ -35,6 +44,8 @@ import { ElMessage } from 'element-plus';
 import PolicyDetail from '../components/PolicyDetail.vue';
 import PolicyEditor from '../components/PolicyEditor.vue';
 import PolicyReport from '../components/PolicyReport.vue';
+import PolicyList from '../components/PolicyList.vue';
+import axios from 'axios';
 
 // 当前显示的组件
 const currentComponent = ref('home');
@@ -42,6 +53,12 @@ const currentComponent = ref('home');
 const currentPolicyId = ref('');
 // 报告数据
 const reportData = ref(null);
+const policyList = ref([]);
+const formatDate = (d) => {
+    if (!d) return '';
+    const date = new Date(d);
+    return date.toLocaleString();
+};
 
 // 切换组件
 const switchComponent = (component) => {
@@ -51,10 +68,9 @@ const switchComponent = (component) => {
 // 加载政策列表
 const loadPolicyList = async () => {
     try {
-        // 这里应该调用API获取政策列表
-        // 暂时模拟一个政策ID
-        currentPolicyId.value = '123';
-        switchComponent('detail');
+        const res = await axios.get('/api/policy/list');
+        policyList.value = res.data;
+        switchComponent('list');
     } catch (error) {
         ElMessage.error('加载政策列表失败');
         console.error('加载政策列表失败:', error);
@@ -71,6 +87,12 @@ const showReport = (policyId) => {
 const showReportFromEditor = (data) => {
     reportData.value = data;
     switchComponent('report');
+};
+
+// 查看详情
+const viewDetail = (id) => {
+    currentPolicyId.value = id;
+    switchComponent('detail');
 };
 </script>
 
@@ -101,11 +123,11 @@ body {
 }
 
 .content-boundary {
-    position: absolute;
+    position: fixed;
     left: 46vw;
     right: 4vw;
-    top: 6.6vh;
-    bottom: 16.4vh;
+    top: 8.2vh;
+    bottom: 17.5vh;
     overflow: hidden;
 }
 
@@ -113,11 +135,9 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    border-radius: 16px;
-    padding: 0;
+    padding: 0 15px;
     box-sizing: border-box;
     overflow: hidden;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     color: #fff;
 }
 
@@ -145,21 +165,26 @@ body {
 :deep(.el-button) {
     background: rgba(149, 64, 107, 0.8);
     border: none;
+    backdrop-filter: blur(2px);
     box-shadow: 0 0 10px 0 rgba(126, 50, 88, 0.8);
     color: #ffffff;
     font-size: 16px;
-    padding: 85px 88px;
+    padding: 90px 88px;
     position: relative;
 }
 
-:deep(.el-button) {
-    font-family: 'Source Han Serif Heavy';
+:deep(.el-button span) {
+    font-family: serif;
+    font-weight: bold;
+    font-size: 25px;
+    letter-spacing: 3px;
 }
 
 :deep(.el-button:hover) {
     background: rgba(149, 64, 107, 0.4);
     transform: scale(1.15);
 }
+
 
 :deep(.el-button::after) {
     content: '';
@@ -173,5 +198,23 @@ body {
     background-position: bottom;
     background-repeat: no-repeat;
     z-index: -1;
+}
+
+:deep(.el-button:nth-child(2)::after) {
+    background-image: url('../assets/images/sketch2.webp');
+}
+
+.copyright-bar {
+    position: absolute;
+    left: 64px;
+    bottom: 49px;
+    color: #fff;
+    font-size: 14px;
+    opacity: 0.85;
+    letter-spacing: 1px;
+    z-index: 2;
+    line-height: 1.5;
+    pointer-events: none;
+    user-select: none;
 }
 </style>
